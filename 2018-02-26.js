@@ -15,9 +15,12 @@ function cons(a, b) {
 }
 
 function car(pair) {
+  // Pair is a function that takes a function and calls it on two values a and
+  // b. Therefore, call pair with a function that takes a and b and returns a.
   return pair((a, b) => a);
 }
 
 function cdr(pair) {
+  // Same as car, except the lambda function we pass returns b instead of a.
   return pair((a, b) => b);
 }
