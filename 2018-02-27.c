@@ -15,59 +15,121 @@
 
 typedef struct node {
   int data;
-  struct node* next;
+  struct node* both;
 } node;
 
-node* create(int data, node* next) {
+node* node_xor(node* a, node* b) {
+  return (node*)((size_t)a ^ (size_t)b);
+}
+
+node* get_next(node* n, node* prev) {
+  return node_xor(prev, n->both);
+}
+
+void set_next(node* n, node* next) {
+  n->both = node_xor(n->both, next);
+}
+
+node* get_prev(node* n, node* next) {
+  return node_xor(n->both, next);
+}
+
+void set_prev(node* n, node* prev) {
+  n->both = node_xor(n->both, prev);
+}
+
+node* create(int data, node* prev, node* next) {
   node* new_node = (node*)malloc(sizeof(node));
   if (new_node == NULL) {
     printf("Error creating a new node.\n");
     exit(0);
   }
   new_node->data = data;
-  new_node->next = next;
+  new_node->both = node_xor(prev, next);
 
   return new_node;
 }
 
 node* prepend(node* head, int data) {
-  node* new_node = create(data, head);
+  node* new_node = create(data, NULL, head);
+  if (head != NULL) {
+    set_prev(head, new_node);
+  }
   head = new_node;
   return head;
 }
 
-node* get_next(node* current) {
-  return current->next;
+// add a new node (data) to the end of the list
+node* add(node* head, int data) {
+  if (head == NULL) {
+    return create(data, NULL, NULL);
+  }
+
+  // iterate through list until we reach the last element
+  node* last = NULL;
+  node* current = head;
+  while(current != NULL) {
+    node* temp = current;
+    current = get_next(current, last);
+    last = temp;
+  }
+
+  // create the new element and add it as last's next ptr
+  node* new_node = create(data, last, NULL);
+  set_next(last, new_node);
+
+  return head;
 }
 
-void display(node* n) {
+// returns a node at idx
+node* get(node* head, int idx) {
+  node* prev = NULL;
+  node* current = head;
+  int i = 0;
+  while(current != NULL) {
+    if (i == idx) {
+      return current;
+    }
+    i++;
+    node* temp = current;
+    current = get_next(current, prev);
+    prev = temp;
+  }
+  return NULL;
+}
+
+void display(node* n, node* prev) {
   if (n != NULL) {
-    printf("addr: %p, data: %d, next: %p\n", n, n->data, n->next);
+    printf("addr: %p, ", n);
+    printf("data: %d, ", n->data);
+    printf("both: %p, ", n->both);
+    printf("prev: %p, ", prev);
+    printf("next: %p\n", get_next(n, prev));
   }
 }
 
 void printLinkedList(node* head) {
-  node* cursor = head;
-  while (cursor != NULL) {
-    display(cursor);
-    cursor = get_next(cursor);
-  }
-}
-
-void freeLinkedList(node* head) {
-  node* prev = head;
-  while (prev != NULL) {
-    node* temp = prev->next;
-    free(temp);
+  node* prev = NULL;
+  node* current = head;
+  while (current != NULL) {
+    display(current, prev);
+    node* temp = current;
+    current = get_next(current, prev);
     prev = temp;
   }
+  printf("\n");
 }
 
 int main(int argc, char* argv[]) {
-  node* head = prepend(head, 1);
-  head = prepend(head, 2);
-  head = prepend(head, 3);
+  node* head = create(1, NULL, NULL);
+  add(head, 2);
+  add(head, 3);
+  add(head, 4);
+  add(head, 5);
+  head = prepend(head, 6);
+  // node* head = prepend(NULL, 1);
+  // head = prepend(head, 2);
+  // head = prepend(head, 3);
   printLinkedList(head);
-  freeLinkedList(head);
-  printf("\n");
+  display(get(head, 5), get(head, 4));
 }
